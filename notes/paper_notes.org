@@ -1,0 +1,37 @@
+Notes on:
+'Color Transfer Between Images'
+Erik Reinhard, Michael Ashikhmin, Bruce Gooch, Peter Shirley
+Applied Perception 2001
+
+
+** Intro
+ - Goal: Automated recoloring of images. 
+   This is done by analyzing correlations in 
+   
+   Attempt to modify colors without to much correlation between color axes.
+
+   For this reason, LAB is used - the axes are more independent.
+
+   
+
+
+** Algorithm
+   - Convert to LaB
+   - Take mean, sd of L, a, B
+   - Sutract means from L, a, B, for target image:
+     L* = L - mean(L)
+     a* = a - mean(a)
+     B* = B - mean(B)
+
+   - Scale by sd ratio:
+     
+     L' = (sigma(L) / sigma(Lsource)) * L*
+     a' = (sigma(a) / sigma(asource)) * a*
+     B' = (sigma(B) / sigma(Bsource)) * B*
+     
+    Now the target datapoints have the same SD's as the source.
+
+  - Add in the source means:
+    Lf = L' + mean(Lsource)
+    af = a' + mean(af)
+    Bf = B' + mean(Bf)
