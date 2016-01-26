@@ -13,8 +13,6 @@
            (org.opencv.imgproc Imgproc))
   (:gen-class))
 
-
-
 (defn col-seq
   "Mat -> [Mat]
   Takes a Mat and returns a vector of its columns."
@@ -131,3 +129,4 @@
         (do
           (vec2d-into-mat-row (first vs) (.row m i))
           (recur m (rest vs) (inc i))))))
+
