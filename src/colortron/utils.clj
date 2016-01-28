@@ -129,4 +129,3 @@
         (do
           (vec2d-into-mat-row (first vs) (.row m i))
           (recur m (rest vs) (inc i))))))
-

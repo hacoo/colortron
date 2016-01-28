@@ -17,7 +17,7 @@ Applied Perception 2001
 
 ** Algorithm
    - Convert to LaB
-   - Take mean, sd of L, a, B
+   - Take mean, sd of L, a, B{}
    - Sutract means from L, a, B, for target image:
      L* = L - mean(L)
      a* = a - mean(a)

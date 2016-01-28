@@ -14,12 +14,15 @@
   (:require [clojure.string :refer [split join]]
             [colortron.utils :refer :all]
             [colortron.stats :refer :all])
-  (:import (org.opencv.core Point Rect Size Mat CvType Scalar
-                            Range)
-           (org.opencv.videoio VideoCapture VideoWriter)
-           (org.opencv.imgcodecs Imgcodecs)
-           (org.opencv.imgproc Imgproc))
   (:gen-class))
+
+(clojure.lang.RT/loadLibrary org.opencv.core.Core/NATIVE_LIBRARY_NAME)
+
+(import '(org.opencv.core Point Rect Size Mat CvType Scalar Range
+                          MatOfInt)
+        '(org.opencv.videoio VideoCapture VideoWriter)
+        '(org.opencv.imgcodecs Imgcodecs)
+        '(org.opencv.imgproc Imgproc))
 
 (defn extract-channel
   "[[[num]]] -> int -> [num]
@@ -62,7 +65,7 @@
 (defn transfer-element
   "Transfer one color element"
   [tar sm tm ssd tsd]
-  (+ (* (- tar tm) (/ tsd ssd)) sm))
+  (+ (* (- tar tm) (/ ssd tsd)) sm))
 
 (defn transfer-channel
   "Transfer a whole channel"
@@ -109,6 +112,27 @@
                                          (:b src-sd)
                                          (:b tar-sd)))))
 
+;; Some test code for above
+;; (def day (mat-to-vec (convert-matrix
+;;           (Imgcodecs/imread "resources/paper_day.jpg")
+;;           :rgb :lab)))
+;; (def sun (mat-to-vec (convert-matrix
+;;           (Imgcodecs/imread "resources/paper_sunset.jpg")
+;;           :rgb :lab)))
+;; (def paper (mat-to-vec (convert-matrix
+;;           (Imgcodecs/imread "resources/paper_redocean.jpg")
+;;           :rgb :lab)))
+;; (def result (mat-to-vec (convert-matrix
+;;           (Imgcodecs/imread "resources/transfer.jpg")
+;;           :rgb :lab)))
+
+
+;; (def out (transfer-colors sun day))
+;; (sd (convert-matrix :rgb :lab (extract-channel sun 2)))
+;; (sd (extract-channel sun 0))
+;; (sd (extract-channel out 0))
+;; (sd (extract-channel paper 0))
+
 
 (defn mat-transfer-colors
   "Mat -> Mat -> Mat
@@ -118,18 +142,28 @@
                  (mat-to-vec source) (mat-to-vec target))))
 
 (defn convert-matrix
-  "Mat -> :rgb|:lab -> :rgb|:lab -> Mat
+  "Mat -> :rgb|:lab|:luv|:hsv -> :rgb|:lab|:luv|:hsv -> Mat
   Convert a mat from format 'from' to format 'to'" 
   [mat from to]
   (let [newmat (.clone mat)]
     (cond (= from to) newmat
-        (and (= from :lab) (= to :rgb))
-        (Imgproc/cvtColor mat newmat Imgproc/COLOR_Lab2BGR)
-        (and (= from :rgb) (= to :lab))
-        (Imgproc/cvtColor mat newmat Imgproc/COLOR_BGR2Lab)
-        :else (throw (Exception. "Invalid conversion type!")))
+          (= from :rgb)
+          (cond (= to :lab) (Imgproc/cvtColor mat newmat Imgproc/COLOR_BGR2Lab)
+                (= to :luv) (Imgproc/cvtColor mat newmat Imgproc/COLOR_BGR2Luv)
+                (= to :hsv) (Imgproc/cvtColor mat newmat Imgproc/COLOR_BGR2HSV)
+                :else (throw (Exception. "Invalid conversion type!")))
+          (= from :lab)
+          (cond (= to :rgb) (Imgproc/cvtColor mat newmat Imgproc/COLOR_Lab2BGR)
+                :else (throw (Exception. "Invalid conversion type!")))
+          (= from :luv)
+          (cond (= to :rgb) (Imgproc/cvtColor mat newmat Imgproc/COLOR_Luv2BGR)
+                :else (throw (Exception. "Invalid conversion type!")))
+          (= from :hsv)
+          (cond (= to :rgb) (Imgproc/cvtColor mat newmat Imgproc/COLOR_HSV2BGR)
+                :else (throw (Exception. "Invalid conversion type!")))
+          :else (throw (Exception. "Invalid conversion type!")))
     newmat))
-        
+          
 (defn image-transfer-colors 
   "string -> string -> string -> :rgb|:lab -> 
   true|false File IO! (writes out image)
@@ -139,22 +173,16 @@
   (in RGB)."
   [src-path tar-path out-path fmt]
   (let [src (convert-matrix (Imgcodecs/imread src-path) :rgb fmt)
-        tar (convert-matrix (Imgcodecs/imread tar-path) :rgb fmt)o
+        tar (convert-matrix (Imgcodecs/imread tar-path) :rgb fmt)
         output-mat (convert-matrix (mat-transfer-colors src tar)
                     fmt :rgb)]
     (Imgcodecs/imwrite out-path output-mat)))
+;;(MatOfInt. 
+;;(int-array Imgcodecs/CV_IMWRITE_JPEG_QUALITY)))))
     
 (image-transfer-colors
- "resources/sunset.jpg"
- "resources/erlich.jpg"
- "resources/transfer.jpg" :lab)
+ "resources/ocean_day.jpg"
+ "resources/ocean_sunset.jpg"
+ "resources/transfer.jpg" :rgb)
 
-
-(def sunset (Imgcodecs/imread "resources/ocean_sunset.jpg"))
-(Imgproc/cvtColor sunset (.clone sunset) Imgproc/COLOR_BGR2Lab)
-(def l (Imgcodecs/imread "resources/lena.png"))
-(Imgcodecs/imwrite "resources/test.png"
-                   (convert-matrix (convert-matrix l :rgb :lab) :lab :rgb))
-(def e (Imgcodecs/imread "resources/erlich.jpg"))
-(def se (.submat e (Range. 0 8) (Range. 0 8)))
-
+(javax.swing.ImageIcon. "resources/transfer.jpg")
