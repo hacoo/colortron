@@ -1,8 +1,9 @@
-;; Henry Cooney <hacoo36@gmail.com> <Github: hacoo>
+4;; Henry Cooney <hacoo36@gmail.com> <Github: hacoo>
 ;; 22 Jan. 2015
 ;; colortron/core.clj
 
-;; Seesaw gui for color transfer
+;; Seesaw gui for color transfer. A little jumbled,
+;; wonder what a better way is to keep seesaw code organized?
 
 (ns colortron.core
   (:use seesaw.core seesaw.font seesaw.chooser)
@@ -21,7 +22,7 @@
            (radio :id i :class :type :text (name i) :group rb-group)))
 (config! rb-group :buttons rbs)
 (selection! rb-group (first rbs))
-(doc flow-panel)
+
 (def source-path (atom nil))
 (def tar-path (atom nil))
 
@@ -70,7 +71,6 @@
                                               (java.io.File. path))) 
                                     (pack! f))
                                 (catch Exception e (println e)))))
-(println (choose-image))
 
 (listen go-button :action (fn [x]
                             (try
@@ -100,19 +100,10 @@
                               (catch Exception e (println e)))))
 
 
-(config! output-box :icon 
-         (javax.imageio.ImageIO/read
-          (java.io.File. transfer-out-path)))
-;transfer-out-path101
-
-(display bp)
-
-
-
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
-  (println "Hello, World!"))
+  (display bp))
 
 
 

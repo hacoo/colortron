@@ -5,6 +5,7 @@
 ;; Opencv utiliy functions and wrappers
 
 (ns colortron.utils
+  (:use (incanter core))
   (:require [clojure.string :refer [split join]])
   (:import (org.opencv.core Point Rect Size Mat CvType Scalar
                             Range)
@@ -129,3 +130,105 @@
         (do
           (vec2d-into-mat-row (first vs) (.row m i))
           (recur m (rest vs) (inc i))))))
+
+
+
+;; Color conversion stuff
+
+(defn log-each
+  [image]
+  (into [] (map #(Math/log10 %) image)))
+
+(defn log-each-row
+  [image]
+  (into [] (map #(log-each %) image)))
+
+
+(defn maplog
+  [image]
+  (into [] (map #(log-each-row %) image)))
+
+(defn unlog-each
+  [image]
+  (into [] (map #(Math/pow 10 %) image)))
+
+(defn unlog-each-row
+  [image]
+  (into [] (map #(unlog-each %) image)))
+
+
+(defn mapunlog
+  [image]
+  (into [] (map #(unlog-each-row %) image)))
+    
+
+
+
+(defn multiply-each-row
+  [row mat]
+  (into []
+        (map (fn [x] (into [] (mmult mat x))) row)))
+  
+
+(defn multiply-each-by-matrix 
+  [image mat]
+  (into [] (map #(multiply-each-row % mat) image)))
+  
+
+(defn rgb->xyz [image]
+  (multiply-each-by-matrix image
+              [[0.5141 0.3239 0.1604]
+               [0.2651 0.6702 0.0641]
+               [0.0241 0.1228 0.8444]]))
+
+(defn xyz->lms [image]
+  (multiply-each-by-matrix image
+                           [[0.3897 0.6890 -0.0787]
+                            [-0.2298 1.1834 0.0464]
+                            [0.0 0.0 1.0]]))
+
+(defn rgb->lms [image]
+  (multiply-each-by-matrix image
+                           [[0.3811 0.5783 0.0402]
+                            [0.1967 0.7244 0.0782]
+                            [0.0241 0.1288 0.8444]]))
+
+(defn lms->LMS [image]
+  (maplog image)) 
+
+(defn LMS->lab [image]
+  (multiply-each-by-matrix
+   (multiply-each-by-matrix image
+                           [[1.0 1.0 1.0]
+                            [1.0 1.0 -2]
+                            [1.0 -1.0 0]])
+   [[0.5774 0.0 0.0 ]
+    [0.0 0.4082 0.0]
+    [0.0 0.0 0.7071]]))
+
+(defn lab->LMS [image]
+  (multiply-each-by-matrix
+   (multiply-each-by-matrix image
+                           [[0.5774 0.0 0.0]
+                            [0.0 0.4082 0.0]
+                            [0.0 0.0 0.7071]])
+       [[1.0 1.0 1.0]
+        [1.0 1.0 -1.0]
+        [1.0 -2.0 0]]))
+
+(defn LMS->lms [image]
+  (mapunlog image))
+
+(defn lms->rgb [image]
+  (multiply-each-by-matrix image 
+                           [[4.4679 -3.5873 0.1193]
+                            [-1.2186 2.3809 -0.1624]
+                            [0.0497 -0.2439 1.2045]]))
+ 
+(defn convert-to-lab
+  [image]
+  (-> image rgb->lms lms->LMS LMS->lab))
+
+(defn convert-from-lab
+  [image]
+  (-> image lab->LMS LMS->lms lms->rgb))
